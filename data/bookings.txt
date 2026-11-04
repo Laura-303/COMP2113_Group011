@@ -1,0 +1,1 @@
+# BOOKING|<id>|<showtimeId>|<customer>|r,c;r,c|STATUS
