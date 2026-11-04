@@ -1,7 +1,7 @@
 # COMP2113 Group Project — Movie Ticket Booking System
 
 ## 1. Team
-| Name | Student ID | GitHub username | Primary role |
+| Name | Student ID | GitHub username | Primary role (e.g.) |
 |---|---|---|---|
 | TBD | TBD | TBD | Integration / Build |
 | TBD | TBD | TBD | Movies & Showtimes |
