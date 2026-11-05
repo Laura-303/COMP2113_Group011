@@ -1,4 +1,4 @@
-# COMP2113 Group Project — Movie Ticket Booking System
+# COMP2113 Fall 2026 Group Project — Movie Ticket Booking System
 
 ## 1. Team
 | Name | Student ID | GitHub username | Primary role (e.g.) |
