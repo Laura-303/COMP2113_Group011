@@ -1,14 +1,15 @@
 # COMP2113 Fall 2026 Group Project — Movie Ticket Booking System
 
 ## 1. Team
-| Name | Student ID | GitHub username | Primary role (e.g.) |
+| Name | Student ID | GitHub username | Primary role |
 |---|---|---|---|
-| TBD | TBD | TBD | Integration / Build |
-| TBD | TBD | TBD | Movies & Showtimes |
-| TBD | TBD | TBD | SeatGrid / Non-syllabus feature |
-| TBD | TBD | TBD | Bookings & Queue |
-| TBD | TBD | TBD | UI / File I/O |
-| TBD | TBD | TBD | QA / Testing / AI log |
+| Laura | 3036406119 | Laura-303 | Integration lead (main.cpp, Makefile, BookingSystem) |
+| Larina | [ID] | larina00 | Part A — Movie/Showtime model + display |
+| Andy | [ID] | Cota2099 | Part A — movies.txt I/O + validation |
+| Michael Li | [ID] | MiChAeLi3290 | Part B — SeatGrid / RAII + LEARNING_MATERIALS |
+| [Name] | [ID] | [username] | Part B — seat selection + serialization |
+| Louis | [ID] | LT0831 | Part C — Booking model + queue logic |
+| [Name] | [ID] | [username] | Part C — bookings.txt I/O + QA coordinator |
 
 ## 2. Application Description and Core Functionality
 Movie ticket booking system: browse movies and showtimes, view a dynamic
