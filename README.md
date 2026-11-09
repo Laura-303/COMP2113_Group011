@@ -8,7 +8,7 @@
 | Andy | [ID] | Cota2099 | Part A — movies.txt I/O + validation |
 | Michael Li | [ID] | MiChAeLi3290 | Part B — SeatGrid / RAII + LEARNING_MATERIALS |
 | [Name] | [ID] | [username] | Part B — seat selection + serialization |
-| Louis | [ID] | LT0831 | Part C — Booking model + queue logic |
+| Louis | 3036570013 | LT0831 | Part C — Booking model + queue logic |
 | [Name] | [ID] | [username] | Part C — bookings.txt I/O + QA coordinator |
 
 ## 2. Application Description and Core Functionality
