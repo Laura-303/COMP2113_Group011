@@ -6,7 +6,7 @@
 | Laura | 3036406119 | Laura-303 | Integration lead (main.cpp, Makefile, BookingSystem) |
 | Larina | [ID] | larina00 | Part A — Movie/Showtime model + display |
 | Andy | 3036236136 | Cota2099 | Part A — movies.txt I/O + validation |
-| Michael Li | [ID] | MiChAeLi3290 | Part B — SeatGrid / RAII + LEARNING_MATERIALS |
+| Michael Li | 3036219657| MiChAeLi3290 | Part B — SeatGrid / RAII + LEARNING_MATERIALS |
 | [Name] | [ID] | [username] | Part B — seat selection + serialization |
 | Louis | [ID] | LT0831 | Part C — Booking model + queue logic |
 | [Name] | [ID] | [username] | Part C — bookings.txt I/O + QA coordinator |
