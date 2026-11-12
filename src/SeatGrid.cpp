@@ -1,55 +1,156 @@
 #include "SeatGrid.h"
 #include <iostream>
-using namespace std;
+#include <sstream>
+#include <vector>
+#include <string>
 
-char** createSeatGrid(int rows, int cols) {
-    char** grid = new char*[rows];
+SeatGrid::SeatGrid() : grid_(nullptr), rows_(0), cols_(0) {}
+
+SeatGrid::SeatGrid(int rows, int cols) : rows_(rows), cols_(cols) {
+    allocate(rows, cols);
+}
+
+SeatGrid::~SeatGrid() {
+    deallocate();
+}
+
+SeatGrid::SeatGrid(const SeatGrid& other) : rows_(other.rows_), cols_(other.cols_) {
+    allocate(rows_, cols_);
+    for (int i = 0; i < rows_; ++i)
+        for (int j = 0; j < cols_; ++j)
+            grid_[i][j] = other.grid_[i][j];
+}
+
+SeatGrid& SeatGrid::operator=(const SeatGrid& other) {
+    if (this != &other) {
+        deallocate();
+        rows_ = other.rows_;
+        cols_ = other.cols_;
+        allocate(rows_, cols_);
+        for (int i = 0; i < rows_; ++i)
+            for (int j = 0; j < cols_; ++j)
+                grid_[i][j] = other.grid_[i][j];
+    }
+    return *this;
+}
+
+SeatGrid::SeatGrid(SeatGrid&& other) noexcept : grid_(other.grid_), rows_(other.rows_), cols_(other.cols_) {
+    other.grid_ = nullptr;
+    other.rows_ = 0;
+    other.cols_ = 0;
+}
+
+SeatGrid& SeatGrid::operator=(SeatGrid&& other) noexcept {
+    if (this != &other) {
+        deallocate();
+        grid_ = other.grid_;
+        rows_ = other.rows_;
+        cols_ = other.cols_;
+        other.grid_ = nullptr;
+        other.rows_ = 0;
+        other.cols_ = 0;
+    }
+    return *this;
+}
+
+void SeatGrid::allocate(int rows, int cols) {
+    grid_ = new char*[rows];
     for (int i = 0; i < rows; ++i) {
-        grid[i] = new char[cols];
-        for (int j = 0; j < cols; ++j) {
-            grid[i][j] = 'O';
+        grid_[i] = new char[cols];
+        for (int j = 0; j < cols; ++j) grid_[i][j] = 'O';
+    }
+}
+
+void SeatGrid::deallocate() {
+    if (grid_) {
+        for (int i = 0; i < rows_; ++i) delete[] grid_[i];
+        delete[] grid_;
+        grid_ = nullptr;
+    }
+}
+
+bool SeatGrid::isValid(int r, int c) const {
+    return r >= 0 && r < rows_ && c >= 0 && c < cols_;
+}
+
+bool SeatGrid::isAvailable(int r, int c) const {
+    return isValid(r, c) && grid_[r][c] == 'O';
+}
+
+bool SeatGrid::book(int r, int c) {
+    if (isAvailable(r, c)) {
+        grid_[r][c] = 'X';
+        return true;
+    }
+    return false;
+}
+
+bool SeatGrid::cancel(int r, int c) {
+    if (isValid(r, c) && grid_[r][c] == 'X') {
+        grid_[r][c] = 'O';
+        return true;
+    }
+    return false;
+}
+
+void SeatGrid::display() const {
+    std::cout << "    ";
+    for (int j = 0; j < cols_; ++j) {
+        std::cout.width(3);
+        std::cout << (j + 1);
+    }
+    std::cout << std::endl << "   " << std::string(cols_ * 3 + 2, '-') << std::endl;
+
+    for (int i = 0; i < rows_; ++i) {
+        char rowLabel = 'A' + i;
+        std::cout << " " << rowLabel << " |";
+        for (int j = 0; j < cols_; ++j) {
+            std::cout.width(3);
+            std::cout << grid_[i][j];
+        }
+        std::cout << std::endl;
+    }
+    std::cout << "[O] Available   [X] Booked" << std::endl;
+}
+
+int SeatGrid::availableCount() const {
+    int count = 0;
+    for (int i = 0; i < rows_; ++i)
+        for (int j = 0; j < cols_; ++j)
+            if (grid_[i][j] == 'O') count++;
+    return count;
+}
+
+int SeatGrid::rows() const { return rows_; }
+int SeatGrid::cols() const { return cols_; }
+
+std::string SeatGrid::serialize() const {
+    std::string s;
+    for (int i = 0; i < rows_; ++i) {
+        if (i > 0) s += ";";
+        s.append(grid_[i], cols_);
+    }
+    return s;
+}
+
+SeatGrid SeatGrid::deserialize(const std::string& s) {
+    std::vector<std::string> rows;
+    std::stringstream ss(s);
+    std::string row;
+    while (std::getline(ss, row, ';')) {
+        rows.push_back(row);
+    }
+    if (rows.empty()) return SeatGrid(0, 0);
+    
+    int r = rows.size();
+    int c = rows[0].length();
+    SeatGrid grid(r, c);
+    for (int i = 0; i < r; ++i) {
+        for (int j = 0; j < c; ++j) {
+            if (j < (int)rows[i].length()) {
+                grid.grid_[i][j] = rows[i][j];
+            }
         }
     }
     return grid;
-}
-
-void displaySeatGrid(char** grid, int rows, int cols) {
-    cout << "    ";
-    for (int j = 0; j < cols; ++j) {
-        cout.width(3);
-        cout << (j + 1);
-    }
-    cout << endl << "   " << string(cols * 3 + 2, '-') << endl;
-
-    for (int i = 0; i < rows; ++i) {
-        char rowLabel = 'A' + i;
-        cout << " " << rowLabel << " |";
-        for (int j = 0; j < cols; ++j) {
-            cout.width(3);
-            cout << grid[i][j];
-        }
-        cout << endl;
-    }
-    cout << "[O] Available   [X] Booked" << endl;
-}
-
-bool bookSeat(char** grid, int rows, int cols, char rowChar, int colNum) {
-    int r = toupper(rowChar) - 'A';
-    int c = colNum - 1;             
-
-    if (grid[r][c] == 'X') {
-        cout << "Sorry, seat " << (char)toupper(rowChar) << colNum << " is already booked." << endl;
-        return false;
-    }
-
-    grid[r][c] = 'X';
-    cout << "Success! Seat " << (char)toupper(rowChar) << colNum << " has been booked." << endl;
-    return true;
-}
-
-void deleteSeatGrid(char** grid, int rows) {
-    for (int i = 0; i < rows; ++i) {
-        delete[] grid[i];
-    }
-    delete[] grid;
 }
