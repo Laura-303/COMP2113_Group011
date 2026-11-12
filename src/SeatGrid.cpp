@@ -1,5 +1,7 @@
 #include "SeatGrid.h"
 #include <iostream>
+#include <sstream>
+#include <vector>
 
 SeatGrid::SeatGrid() : grid_(nullptr), rows_(0), cols_(0) {}
 
@@ -7,9 +9,7 @@ SeatGrid::SeatGrid(int rows, int cols) : rows_(rows), cols_(cols) {
     allocate(rows, cols);
 }
 
-SeatGrid::~SeatGrid() {
-    deallocate();
-}
+SeatGrid::~SeatGrid() { deallocate(); }
 
 SeatGrid::SeatGrid(const SeatGrid& other) : rows_(other.rows_), cols_(other.cols_) {
     allocate(rows_, cols_);
@@ -108,5 +108,33 @@ int SeatGrid::availableCount() const {
 int SeatGrid::rows() const { return rows_; }
 int SeatGrid::cols() const { return cols_; }
 
-std::string SeatGrid::serialize() const { return ""; }
-SeatGrid SeatGrid::deserialize(const std::string& s) { return SeatGrid(); }
+std::string SeatGrid::serialize() const {
+    std::string s;
+    for (int i = 0; i < rows_; ++i) {
+        if (i > 0) s += ";";
+        s.append(grid_[i], cols_);
+    }
+    return s;
+}
+
+SeatGrid SeatGrid::deserialize(const std::string& s) {
+    std::vector<std::string> rows;
+    std::stringstream ss(s);
+    std::string row;
+    while (std::getline(ss, row, ';')) {
+        rows.push_back(row);
+    }
+    if (rows.empty()) return SeatGrid(0, 0);
+    
+    int r = rows.size();
+    int c = rows[0].length();
+    SeatGrid grid(r, c);
+    for (int i = 0; i < r; ++i) {
+        for (int j = 0; j < c; ++j) {
+            if (j < rows[i].length()) {
+                grid.grid_[i][j] = rows[i][j];
+            }
+        }
+    }
+    return grid;
+}
