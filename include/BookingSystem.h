@@ -5,8 +5,9 @@
 #include <vector>
 #include <queue>
 #include <unordered_map>
-#include "Movie.h"
-#include "Booking.h"
+#include "movie.h"
+#include "showtime.h"
+#include "booking.h"
 
 class BookingSystem {
 public:
@@ -24,15 +25,18 @@ public:
                                const std::vector<std::pair<int,int>>& seats);
                                
     bool processNext();
-    BookingStatus statusOf(const std::string& bookingId) const;
+    std::string statusOf(const std::string& bookingId) const;
 
 private:
     std::vector<Movie> movies_;
     std::queue<Booking> pending_;
-    std::unordered_map<std::string, std::pair<size_t,size_t>> showtimeIndex_;
+    std::unordered_map<std::string, std::pair<size_t, size_t>> showtimeIndex_;
     std::string moviesPath_;
     std::string bookingsPath_;
     int nextBookingNum_;
+
+    Showtime* findShowtime(const std::string& showtimeId);
+    const Showtime* findShowtime(const std::string& showtimeId) const;
 };
 
 #endif
