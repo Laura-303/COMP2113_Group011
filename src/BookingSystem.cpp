@@ -9,10 +9,7 @@ BookingSystem::BookingSystem(const std::string& moviesPath, const std::string& b
 
 bool BookingSystem::loadAll() {
     std::ifstream file(moviesPath_);
-    if (!file.is_open()) {
-        std::cerr << "Error: Could not open " << moviesPath_ << "\n";
-        return false;
-    }
+    if (!file.is_open()) return false;
 
     movies_.clear();
     showtimeIndex_.clear();
@@ -22,47 +19,39 @@ bool BookingSystem::loadAll() {
         if (line.empty()) continue;
         std::stringstream ss(line);
         std::string token;
-        
         std::getline(ss, token, '|');
 
         if (token == "MOVIE") {
             Movie m;
+            std::string durStr;
             std::getline(ss, m.id, '|');
             std::getline(ss, m.title, '|');
-            std::string durStr;
             std::getline(ss, durStr, '|');
             m.durationMin = std::stoi(durStr);
             std::getline(ss, m.rating, '|');
             movies_.push_back(m);
-            
         } else if (token == "SHOW") {
             if (movies_.empty()) continue;
             Showtime st;
+            std::string movieId, priceStr, rStr, cStr;
             std::getline(ss, st.id, '|');
-            std::string movieId;
             std::getline(ss, movieId, '|');
             std::getline(ss, st.datetime, '|');
             std::getline(ss, st.hall, '|');
-            std::string priceStr;
             std::getline(ss, priceStr, '|');
             st.price = std::stod(priceStr);
-            
-            std::string rStr, cStr;
             std::getline(ss, rStr, '|');
             std::getline(ss, cStr, '|');
             st.seats = SeatGrid(std::stoi(rStr), std::stoi(cStr));
 
             movies_.back().showtimes.push_back(st);
-            
             size_t mIdx = movies_.size() - 1;
             size_t sIdx = movies_.back().showtimes.size() - 1;
             showtimeIndex_[st.id] = {mIdx, sIdx};
-
         } else if (token == "SEATS") {
             std::string showtimeId, seatsStr;
             std::getline(ss, showtimeId, '|');
             std::getline(ss, seatsStr, '|');
-            
             auto it = showtimeIndex_.find(showtimeId);
             if (it != showtimeIndex_.end()) {
                 movies_[it->second.first].showtimes[it->second.second].seats = SeatGrid::deserialize(seatsStr);
@@ -102,6 +91,30 @@ void BookingSystem::listMovies() const {
     std::cout << "\n--- Movies ---\n";
     for (const auto& m : movies_) {
         std::cout << m.id << " - " << m.title << "\n";
+    }
+}
+
+void BookingSystem::showMovie(const std::string& movieId) const {
+    for (const auto& m : movies_) {
+        if (m.id == movieId) {
+            std::cout << "\n" << m.title << " (" << m.rating << ") - " << m.durationMin << " mins\n";
+            for (const auto& st : m.showtimes) {
+                std::cout << "  Showtime: " << st.id << " at " << st.datetime << " (" << st.hall << ")\n";
+            }
+            return;
+        }
+    }
+    std::cout << "Movie not found.\n";
+}
+
+void BookingSystem::showSeats(const std::string& showtimeId) const {
+    auto it = showtimeIndex_.find(showtimeId);
+    if (it != showtimeIndex_.end()) {
+        const Showtime& st = movies_[it->second.first].showtimes[it->second.second];
+        std::cout << "\nSeats for Showtime " << showtimeId << " (" << st.hall << "):\n";
+        st.seats.display();
+    } else {
+        std::cout << "Showtime not found.\n";
     }
 }
 
