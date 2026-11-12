@@ -1,0 +1,93 @@
+#include "BookingSystem.h"
+#include <iostream>
+#include <fstream>
+#include <sstream>
+
+BookingSystem::BookingSystem(const std::string& moviesPath, const std::string& bookingsPath)
+    : moviesPath_(moviesPath), bookingsPath_(bookingsPath), nextBookingNum_(1) {
+}
+
+bool BookingSystem::loadAll() {
+    return true; 
+}
+
+bool BookingSystem::saveAll() const {
+    return true;
+}
+
+Showtime* BookingSystem::findShowtime(const std::string& showtimeId) {
+    auto it = showtimeIndex_.find(showtimeId);
+    if (it != showtimeIndex_.end()) {
+        return &movies_[it->second.first].showtimes[it->second.second];
+    }
+    return nullptr;
+}
+
+void BookingSystem::listMovies() const {
+    std::cout << "\n--- Movies ---\n";
+    for (const auto& m : movies_) {
+        std::cout << m.id << " - " << m.title << "\n";
+    }
+}
+
+std::string BookingSystem::enqueueBooking(const std::string& showtimeId,
+                                          const std::string& customer,
+                                          const std::vector<std::pair<int,int>>& seats) {
+    Booking b;
+    b.id = "B" + std::to_string(nextBookingNum_++);
+    b.showtimeId = showtimeId;
+    b.customer = customer;
+    b.seats = seats;
+    b.status = BookingStatus::PENDING;
+
+    pending_.push(b);
+    return b.id;
+}
+
+bool BookingSystem::processNext() {
+    if (pending_.empty()) {
+        std::cout << "Queue is empty.\n";
+        return false;
+    }
+
+    Booking b = pending_.front();
+    pending_.pop();
+
+    Showtime* st = findShowtime(b.showtimeId);
+    if (!st) {
+        std::cout << "Error: Showtime not found.\n";
+        return false;
+    }
+
+    bool allAvailable = true;
+    for (const auto& seat : b.seats) {
+        if (!st->seats.isAvailable(seat.first, seat.second)) {
+            allAvailable = false;
+            break;
+        }
+    }
+
+    if (allAvailable) {
+        for (const auto& seat : b.seats) {
+            st->seats.book(seat.first, seat.second);
+        }
+        b.status = BookingStatus::CONFIRMED;
+        std::cout << "Booking " << b.id << " CONFIRMED.\n";
+    } else {
+        b.status = BookingStatus::WAITLIST;
+        std::cout << "Booking " << b.id << " WAITLISTED (seats taken).\n";
+    }
+
+    return true;
+}
+
+std::string BookingSystem::statusOf(const std::string& bookingId) const {
+    std::queue<Booking> temp = pending_;
+    while (!temp.empty()) {
+        if (temp.front().id == bookingId) {
+            return toString(temp.front().status); 
+        }
+        temp.pop();
+    }
+    return "NOT FOUND";
+}
