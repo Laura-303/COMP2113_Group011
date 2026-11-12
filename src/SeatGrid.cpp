@@ -1,3 +1,4 @@
+#include "SeatGrid.h"
 #include <iostream>
 using namespace std;
 
@@ -18,7 +19,7 @@ void displaySeatGrid(char** grid, int rows, int cols) {
         cout.width(3);
         cout << (j + 1);
     }
-    cout << endl << "   " <<  string(cols * 3 + 2, '-') << endl;
+    cout << endl << "   " << string(cols * 3 + 2, '-') << endl;
 
     for (int i = 0; i < rows; ++i) {
         char rowLabel = 'A' + i;
@@ -29,7 +30,7 @@ void displaySeatGrid(char** grid, int rows, int cols) {
         }
         cout << endl;
     }
-    cout << "[O] Available   [X] Booked";
+    cout << "[O] Available   [X] Booked" << endl;
 }
 
 bool bookSeat(char** grid, int rows, int cols, char rowChar, int colNum) {
@@ -51,20 +52,4 @@ void deleteSeatGrid(char** grid, int rows) {
         delete[] grid[i];
     }
     delete[] grid;
-}
-
-int main() {
-    int rows = 8;
-    int cols = 10; 
-    
-    char** theaterSeats = createSeatGrid(rows, cols);
-
-    displaySeatGrid(theaterSeats, rows, cols);
-
-    //I leave this part for booking seat using the bookSeat function above so you guys can test during the discussion
-    
-    
-    deleteSeatGrid(theaterSeats, rows);
-
-    return 0;
 }
