@@ -8,74 +8,113 @@ BookingSystem::BookingSystem(const std::string& moviesPath, const std::string& b
 }
 
 bool BookingSystem::loadAll() {
-    std::ifstream file(moviesPath_);
-    if (!file.is_open()) return false;
-
+    // 1. Load Movies
+    std::ifstream mFile(moviesPath_);
+    if (!mFile.is_open()) return false;
     movies_.clear();
     showtimeIndex_.clear();
     std::string line;
 
-    while (std::getline(file, line)) {
+    while (std::getline(mFile, line)) {
         if (line.empty()) continue;
         std::stringstream ss(line);
         std::string token;
         std::getline(ss, token, '|');
 
         if (token == "MOVIE") {
-            Movie m;
-            std::string durStr;
-            std::getline(ss, m.id, '|');
-            std::getline(ss, m.title, '|');
-            std::getline(ss, durStr, '|');
-            m.durationMin = std::stoi(durStr);
+            Movie m; std::string durStr;
+            std::getline(ss, m.id, '|'); std::getline(ss, m.title, '|');
+            std::getline(ss, durStr, '|'); m.durationMin = std::stoi(durStr);
             std::getline(ss, m.rating, '|');
             movies_.push_back(m);
         } else if (token == "SHOW") {
             if (movies_.empty()) continue;
-            Showtime st;
-            std::string movieId, priceStr, rStr, cStr;
-            std::getline(ss, st.id, '|');
-            std::getline(ss, movieId, '|');
-            std::getline(ss, st.datetime, '|');
-            std::getline(ss, st.hall, '|');
-            std::getline(ss, priceStr, '|');
-            st.price = std::stod(priceStr);
-            std::getline(ss, rStr, '|');
-            std::getline(ss, cStr, '|');
+            Showtime st; std::string movieId, priceStr, rStr, cStr;
+            std::getline(ss, st.id, '|'); std::getline(ss, movieId, '|');
+            std::getline(ss, st.datetime, '|'); std::getline(ss, st.hall, '|');
+            std::getline(ss, priceStr, '|'); st.price = std::stod(priceStr);
+            std::getline(ss, rStr, '|'); std::getline(ss, cStr, '|');
             st.seats = SeatGrid(std::stoi(rStr), std::stoi(cStr));
-
             movies_.back().showtimes.push_back(st);
-            size_t mIdx = movies_.size() - 1;
-            size_t sIdx = movies_.back().showtimes.size() - 1;
-            showtimeIndex_[st.id] = {mIdx, sIdx};
+            showtimeIndex_[st.id] = {movies_.size() - 1, movies_.back().showtimes.size() - 1};
         } else if (token == "SEATS") {
             std::string showtimeId, seatsStr;
-            std::getline(ss, showtimeId, '|');
-            std::getline(ss, seatsStr, '|');
+            std::getline(ss, showtimeId, '|'); std::getline(ss, seatsStr, '|');
             auto it = showtimeIndex_.find(showtimeId);
             if (it != showtimeIndex_.end()) {
                 movies_[it->second.first].showtimes[it->second.second].seats = SeatGrid::deserialize(seatsStr);
             }
         }
     }
-    file.close();
+    mFile.close();
+
+    // 2. Load Bookings (Pending Queue)
+    std::ifstream bFile(bookingsPath_);
+    if (bFile.is_open()) {
+        while (std::getline(bFile, line)) {
+            if (line.empty() || line[0] == '#') continue;
+            std::stringstream ss(line);
+            std::string token, id, stId, customer, seatsStr, statusStr;
+            
+            std::getline(ss, token, '|'); // BOOKING
+            std::getline(ss, id, '|');
+            std::getline(ss, stId, '|');
+            std::getline(ss, customer, '|');
+            std::getline(ss, seatsStr, '|');
+            std::getline(ss, statusStr, '|');
+            
+            Booking b;
+            b.id = id;
+            b.showtimeId = stId;
+            b.customer = customer;
+            b.status = BookingStatus::PENDING;
+            
+            // Parse seats (e.g. "0,1;0,2")
+            std::stringstream sss(seatsStr);
+            std::string seatPair;
+            while (std::getline(sss, seatPair, ';')) {
+                size_t comma = seatPair.find(',');
+                if (comma != std::string::npos) {
+                    b.seats.push_back({std::stoi(seatPair.substr(0, comma)), std::stoi(seatPair.substr(comma+1))});
+                }
+            }
+            pending_.push(b);
+            nextBookingNum_++; // Increment so we don't reuse IDs
+        }
+        bFile.close();
+    }
     return true;
 }
 
 bool BookingSystem::saveAll() const {
-    std::ofstream file(moviesPath_);
-    if (!file.is_open()) return false;
-
+    // 1. Save Movies
+    std::ofstream mFile(moviesPath_);
+    if (!mFile.is_open()) return false;
     for (const auto& m : movies_) {
-        file << "MOVIE|" << m.id << "|" << m.title << "|" << m.durationMin << "|" << m.rating << "\n";
+        mFile << "MOVIE|" << m.id << "|" << m.title << "|" << m.durationMin << "|" << m.rating << "\n";
         for (const auto& st : m.showtimes) {
-            file << "SHOW|" << st.id << "|" << m.id << "|" << st.datetime << "|" 
-                 << st.hall << "|" << st.price << "|" 
-                 << st.seats.rows() << "|" << st.seats.cols() << "\n";
-            file << "SEATS|" << st.id << "|" << st.seats.serialize() << "\n";
+            mFile << "SHOW|" << st.id << "|" << m.id << "|" << st.datetime << "|" << st.hall << "|" << st.price << "|" << st.seats.rows() << "|" << st.seats.cols() << "\n";
+            mFile << "SEATS|" << st.id << "|" << st.seats.serialize() << "\n";
         }
     }
-    file.close();
+    mFile.close();
+
+    // 2. Save Bookings Queue
+    std::ofstream bFile(bookingsPath_);
+    if (!bFile.is_open()) return false;
+    bFile << "# BOOKING|id|showtimeId|customer|r,c;r,c|STATUS\n";
+    std::queue<Booking> temp = pending_;
+    while (!temp.empty()) {
+        Booking b = temp.front();
+        bFile << "BOOKING|" << b.id << "|" << b.showtimeId << "|" << b.customer << "|";
+        for (size_t i = 0; i < b.seats.size(); ++i) {
+            bFile << b.seats[i].first << "," << b.seats[i].second;
+            if (i < b.seats.size() - 1) bFile << ";";
+        }
+        bFile << "|" << toString(b.status) << "\n";
+        temp.pop();
+    }
+    bFile.close();
     return true;
 }
 
@@ -160,10 +199,12 @@ bool BookingSystem::processNext() {
             st->seats.book(seat.first, seat.second);
         }
         b.status = BookingStatus::CONFIRMED;
-        std::cout << "Booking " << b.id << " CONFIRMED.\n";
+        std::cout << "\n[QUEUE] Processing " << b.customer << "'s booking (" << b.id << ")...\n";
+        std::cout << "  -> Status: CONFIRMED\n";
     } else {
         b.status = BookingStatus::WAITLIST;
-        std::cout << "Booking " << b.id << " WAITLISTED (seats taken).\n";
+        std::cout << "\n[QUEUE] Processing " << b.customer << "'s booking (" << b.id << ")...\n";
+        std::cout << "  -> Status: WAITLISTED (Seats no longer available)\n";
     }
 
     return true;
