@@ -1,1 +1,3 @@
 # BOOKING|id|showtimeId|customer|r,c;r,c|STATUS
+BOOKING|B1|S--1|Alice|0,0|PENDING
+BOOKING|B2|S001|Alice|0,0|PENDING
