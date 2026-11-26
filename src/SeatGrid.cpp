@@ -131,7 +131,7 @@ SeatGrid SeatGrid::deserialize(const std::string& s) {
     SeatGrid grid(r, c);
     for (int i = 0; i < r; ++i) {
         for (int j = 0; j < c; ++j) {
-            if (j < rows[i].length()) {
+            if (j < (int)rows[i].length()) {
                 grid.grid_[i][j] = rows[i][j];
             }
         }
