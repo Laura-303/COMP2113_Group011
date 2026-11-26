@@ -2,17 +2,20 @@
 #include <iostream>
 #include <fstream>
 #include <sstream>
+#include <queue>
+#include <unordered_map>
 
 BookingSystem::BookingSystem(const std::string& moviesPath, const std::string& bookingsPath)
     : moviesPath_(moviesPath), bookingsPath_(bookingsPath), nextBookingNum_(1) {
 }
 
 bool BookingSystem::loadAll() {
-    // 1. Load Movies
     std::ifstream mFile(moviesPath_);
     if (!mFile.is_open()) return false;
     movies_.clear();
     showtimeIndex_.clear();
+    
+    std::unordered_map<std::string, size_t> movieMap;
     std::string line;
 
     while (std::getline(mFile, line)) {
@@ -27,16 +30,20 @@ bool BookingSystem::loadAll() {
             std::getline(ss, durStr, '|'); m.durationMin = std::stoi(durStr);
             std::getline(ss, m.rating, '|');
             movies_.push_back(m);
+            movieMap[m.id] = movies_.size() - 1;
         } else if (token == "SHOW") {
-            if (movies_.empty()) continue;
             Showtime st; std::string movieId, priceStr, rStr, cStr;
             std::getline(ss, st.id, '|'); std::getline(ss, movieId, '|');
             std::getline(ss, st.datetime, '|'); std::getline(ss, st.hall, '|');
             std::getline(ss, priceStr, '|'); st.price = std::stod(priceStr);
             std::getline(ss, rStr, '|'); std::getline(ss, cStr, '|');
             st.seats = SeatGrid(std::stoi(rStr), std::stoi(cStr));
-            movies_.back().showtimes.push_back(st);
-            showtimeIndex_[st.id] = {movies_.size() - 1, movies_.back().showtimes.size() - 1};
+            
+            if (movieMap.find(movieId) != movieMap.end()) {
+                size_t mIdx = movieMap[movieId];
+                movies_[mIdx].showtimes.push_back(st);
+                showtimeIndex_[st.id] = {mIdx, movies_[mIdx].showtimes.size() - 1};
+            }
         } else if (token == "SEATS") {
             std::string showtimeId, seatsStr;
             std::getline(ss, showtimeId, '|'); std::getline(ss, seatsStr, '|');
@@ -48,7 +55,6 @@ bool BookingSystem::loadAll() {
     }
     mFile.close();
 
-    // 2. Load Bookings (Pending Queue)
     std::ifstream bFile(bookingsPath_);
     if (bFile.is_open()) {
         while (std::getline(bFile, line)) {
@@ -56,20 +62,14 @@ bool BookingSystem::loadAll() {
             std::stringstream ss(line);
             std::string token, id, stId, customer, seatsStr, statusStr;
             
-            std::getline(ss, token, '|'); // BOOKING
-            std::getline(ss, id, '|');
-            std::getline(ss, stId, '|');
-            std::getline(ss, customer, '|');
-            std::getline(ss, seatsStr, '|');
-            std::getline(ss, statusStr, '|');
+            std::getline(ss, token, '|'); std::getline(ss, id, '|');
+            std::getline(ss, stId, '|'); std::getline(ss, customer, '|');
+            std::getline(ss, seatsStr, '|'); std::getline(ss, statusStr, '|');
             
             Booking b;
-            b.id = id;
-            b.showtimeId = stId;
-            b.customer = customer;
+            b.id = id; b.showtimeId = stId; b.customer = customer;
             b.status = BookingStatus::PENDING;
             
-            // Parse seats (e.g. "0,1;0,2")
             std::stringstream sss(seatsStr);
             std::string seatPair;
             while (std::getline(sss, seatPair, ';')) {
@@ -79,7 +79,7 @@ bool BookingSystem::loadAll() {
                 }
             }
             pending_.push(b);
-            nextBookingNum_++; // Increment so we don't reuse IDs
+            nextBookingNum_++;
         }
         bFile.close();
     }
@@ -87,7 +87,6 @@ bool BookingSystem::loadAll() {
 }
 
 bool BookingSystem::saveAll() const {
-    // 1. Save Movies
     std::ofstream mFile(moviesPath_);
     if (!mFile.is_open()) return false;
     for (const auto& m : movies_) {
@@ -99,7 +98,6 @@ bool BookingSystem::saveAll() const {
     }
     mFile.close();
 
-    // 2. Save Bookings Queue
     std::ofstream bFile(bookingsPath_);
     if (!bFile.is_open()) return false;
     bFile << "# BOOKING|id|showtimeId|customer|r,c;r,c|STATUS\n";

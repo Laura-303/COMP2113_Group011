@@ -8,8 +8,8 @@
 
 void printMenu(std::ostream& out = std::cout) {
     out << "\n=== Movie Ticket Booking System ===\n"
-        << "1. Browse movies\n"
-        << "2. Show seats for a showtime\n"
+        << "1. Browse movies & showtimes\n"
+        << "2. Show seats (by Showtime ID)\n"
         << "3. Book seats (Add to queue)\n"
         << "4. Process booking queue\n"
         << "5. Save and exit\n"
@@ -47,15 +47,30 @@ void runInteractive(BookingSystem& sys) {
     while (true) {
         printMenu();
         std::string choice;
-        if (!(std::cin >> choice)) break; // Handles Ctrl+D / EOF
+        if (!(std::cin >> choice)) break;
 
         if (choice == "1") {
-            sys.listMovies();
-            std::cout << "\nEnter Movie ID to see showtimes (or 'b' to go back): ";
-            std::string mId;
-            std::cin >> mId;
-            if (mId != "b" && mId != "B") {
+            // Smoother Browsing Flow
+            while (true) {
+                sys.listMovies();
+                std::cout << "\nEnter Movie ID for showtimes (or 'b' to go back): ";
+                std::string mId;
+                std::cin >> mId;
+                if (mId == "b" || mId == "B") break;
+
                 sys.showMovie(mId);
+
+                std::cout << "\nEnter Showtime ID to view seats (or 'b' to go back): ";
+                std::string stId;
+                std::cin >> stId;
+                if (stId == "b" || stId == "B") break;
+
+                sys.showSeats(stId);
+                
+                // Pause before showing the list again
+                std::cout << "\nPress Enter to continue...";
+                std::cin.ignore();
+                std::cin.get();
             }
         } 
         else if (choice == "2") {
@@ -102,6 +117,8 @@ void runScript(BookingSystem& sys, const std::string& filename) {
         std::cerr << "Error: Could not open script file " << filename << "\n";
         return;
     }
+    
+    std::cout << "=== START SCRIPT: " << filename << " ===\n";
     std::string command;
     while (file >> command) {
         if (command == "LIST") {
@@ -117,7 +134,7 @@ void runScript(BookingSystem& sys, const std::string& filename) {
                 std::cout << "[Script Error] Invalid seats for " << customer << "\n";
             } else {
                 std::string bId = sys.enqueueBooking(stId, customer, seats);
-                std::cout << "Enqueued booking " << bId << "\n";
+                std::cout << "Enqueued booking " << bId << " for " << customer << "\n";
             }
         } else if (command == "PROCESS") {
             sys.processNext();
@@ -128,6 +145,7 @@ void runScript(BookingSystem& sys, const std::string& filename) {
             break;
         }
     }
+    std::cout << "=== END SCRIPT ===\n";
 }
 
 int main(int argc, char* argv[]) {
